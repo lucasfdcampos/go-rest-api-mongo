@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lucas/go-rest-api-mongo/internal/dto"
 	"github.com/lucas/go-rest-api-mongo/internal/services"
 	"github.com/lucas/go-rest-api-mongo/pkg/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AuthHandler struct {
@@ -70,4 +72,35 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, loginResponse)
+}
+
+func (h *AuthHandler) GetProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "unauthorized", "user not authenticated")
+		return
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(userID.(string))
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "bad_request", "invalid user ID")
+		return
+	}
+
+	user, err := h.userService.GetByID(c.Request.Context(), objectID)
+	if err != nil {
+		if errors.Is(err, services.ErrUserNotFound) {
+			utils.SendError(c, http.StatusNotFound, "not_found", "user not found")
+			return
+		}
+		utils.SendError(c, http.StatusInternalServerError, "internal_error", "failed to retrieve user profile")
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.UserResponse{
+		ID:        user.ID.Hex(),
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt.String(),
+	})
 }

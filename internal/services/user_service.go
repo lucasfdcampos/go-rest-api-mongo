@@ -7,6 +7,7 @@ import (
 	"github.com/lucas/go-rest-api-mongo/internal/dto"
 	"github.com/lucas/go-rest-api-mongo/internal/models"
 	"github.com/lucas/go-rest-api-mongo/internal/repositories"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserService struct {
@@ -77,4 +78,8 @@ func (s *UserService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 			CreatedAt: user.CreatedAt.String(),
 		},
 	}, nil
+}
+
+func (s *UserService) GetByID(ctx context.Context, userID primitive.ObjectID) (*models.User, error) {
+	return s.repo.FindByID(ctx, userID)
 }

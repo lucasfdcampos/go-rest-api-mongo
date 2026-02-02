@@ -122,15 +122,7 @@ func setupRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, userHand
 	protected := router.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(authService))
 	{
-		protected.GET("/profile", func(c *gin.Context) {
-			userID := c.GetString("user_id")
-			email := c.GetString("email")
-			c.JSON(http.StatusOK, gin.H{
-				"user_id": userID,
-				"email":   email,
-				"message": "This is a protected route",
-			})
-		})
+		protected.GET("/profile", authHandler.GetProfile)
 	}
 
 	log.Println("✅ Routes configured")
